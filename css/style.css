@@ -291,3 +291,4 @@ select option { background: var(--bg-2); }
   .comet { display: none; }
   html { scroll-behavior: auto; }
 }
+.standings-grid { max-width: 760px; }

@@ -2,14 +2,10 @@
 // and in-place auto-refresh while games are live.
 
 import { getScoreboard, getStandings, getIndex } from '../api.js';
-import { confLogo } from '../normalize.js';
+import { confLogo, cfbConfRank } from '../normalize.js';
 import {
   esc, logo, teamHref, sourceNote, fmtKickoff, skeletonCards, emptyState, setChips,
 } from '../ui.js';
-
-// Power conferences first, independents last; everything else alphabetical in between.
-const CFB_CONF_ORDER = ['8', '5', '4', '1', '9', '151', '17', '37', '15', '12'];
-const CFB_INDEPENDENTS = '18';
 
 export function statusText(g) {
   const s = g.status;
@@ -81,9 +77,8 @@ function groupCFB(games, standings) {
       confs.get(id).games.push(g);
     }
   }
-  const rank = (id) => (id === CFB_INDEPENDENTS ? 1e3 : id === 'other' ? 1e4 : CFB_CONF_ORDER.includes(id) ? CFB_CONF_ORDER.indexOf(id) : 100);
   const sections = [...confs.values()].filter((c) => c.games.length);
-  sections.sort((a, b) => rank(a.id) - rank(b.id) || a.name.localeCompare(b.name));
+  sections.sort((a, b) => cfbConfRank(a.id) - cfbConfRank(b.id) || a.name.localeCompare(b.name));
   for (const c of sections) {
     const best = (g) => Math.min(c.pos.get(g.home.id) ?? 999, c.pos.get(g.away.id) ?? 999);
     c.games.sort((a, b) => best(a) - best(b) || byKickoff(a, b));

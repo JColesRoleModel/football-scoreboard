@@ -24,6 +24,15 @@ export function teamLogo(t, league) {
   return '';
 }
 
+// Display order for CFB conferences: power conferences first, independents last.
+const CFB_CONF_ORDER = ['8', '5', '4', '1', '9', '151', '17', '37', '15', '12'];
+export function cfbConfRank(id) {
+  if (id === '18') return 1e3;
+  if (id === 'other') return 1e4;
+  const i = CFB_CONF_ORDER.indexOf(id);
+  return i >= 0 ? i : 100;
+}
+
 export function confLogo(league, id) {
   if (league === 'nfl') {
     const c = String(id).toLowerCase();
