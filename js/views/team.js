@@ -79,7 +79,7 @@ export async function render(el, route, ctx) {
     return `<div class="sched-row${g.status.state === 'in' ? ' live' : ''}">
       <span class="when">${esc(fmtDate(g.date))}${g.week && g.seasonType === 2 ? `<br>Wk ${g.week}` : ''}</span>
       <a href="${teamHref(league, opp.id)}" aria-hidden="true" tabindex="-1">${logo(opp.logo, opp.abbr, 24)}</a>
-      <a class="opp" href="${teamHref(league, opp.id)}"><span class="at">${home ? 'vs' : '@'}</span>${opp.rank ? `<span class="rank">${opp.rank}</span> ` : ''}${esc(opp.short || opp.name)}${g.note ? ` <span class="sub" style="color:var(--violet);font-size:11px">${esc(g.note)}</span>` : ''}</a>
+      <a class="opp" href="${teamHref(league, opp.id)}"><span class="at">${home ? 'vs' : '@'}</span>${opp.rank ? `<span class="rank">${opp.rank}</span> ` : ''}${esc(league === 'cfb' ? opp.name || opp.short : opp.short || opp.name)}${g.note ? ` <span class="sub" style="color:var(--violet);font-size:11px">${esc(g.note)}</span>` : ''}</a>
       <span class="res">${resultHTML(g, me, opp)}</span>
     </div>`;
   }).join('');

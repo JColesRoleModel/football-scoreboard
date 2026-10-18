@@ -18,7 +18,7 @@ function table(group, league, apRank) {
     <tbody>${group.teams.map((t, i) => {
       const rank = apRank?.get(t.id);
       return `<tr>
-        <td class="team"><a href="${teamHref(league, t.id)}"><span class="pos">${i + 1}</span>${logo(t.logo, t.abbr, 22)}${rank ? `<span class="rank">${rank}</span>` : ''}<span class="nm">${esc(t.short || t.name)}</span></a></td>
+        <td class="team"><a href="${teamHref(league, t.id)}"><span class="pos">${i + 1}</span>${logo(t.logo, t.abbr, 22)}${rank ? `<span class="rank">${rank}</span>` : ''}<span class="nm">${esc(league === 'cfb' ? t.name || t.short : t.short || t.name)}</span></a></td>
         <td>${esc(nfl ? t.overall : t.conf || '-')}</td>
         <td>${esc(nfl ? t.div || '-' : t.overall)}</td>
         ${nfl ? `<td class="hide-sm">${t.pct != null ? Number(t.pct).toFixed(3).replace(/^0/, '') : '-'}</td>` : ''}
@@ -58,7 +58,7 @@ export async function render(el, route, ctx) {
     }
     html += `<section class="section" id="st-${esc(g.id)}">
       <div class="section-head">${logo(g.logo, g.abbr, 30)}<h2>${esc(g.name)}</h2></div>
-      ${table(g, league, apRank)}
+      ${g.divisions ? g.divisions.map((d) => `<h3 class="div-title">${esc(d.name)}</h3>${table({ teams: d.teams }, league, apRank)}`).join('') : table(g, league, apRank)}
     </section>`;
   }
   el.querySelector('#body').innerHTML = `<div class="standings-grid">${html}</div>`;

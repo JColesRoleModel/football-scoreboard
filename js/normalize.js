@@ -24,6 +24,15 @@ export function teamLogo(t, league) {
   return '';
 }
 
+const CFB_CONF_ABBR = {
+  1: 'ACC', 4: 'Big 12', 5: 'Big Ten', 8: 'SEC', 9: 'Pac-12', 12: 'C-USA', 15: 'MAC',
+  17: 'Mountain West', 18: 'Independents', 37: 'Sun Belt', 151: 'American',
+};
+const CFB_DIVISIONS = {
+  167: { parent: '37', name: 'Sun Belt Conference' },
+  168: { parent: '37', name: 'Sun Belt Conference' },
+};
+
 // Display order for CFB conferences: power conferences first, independents last.
 const CFB_CONF_ORDER = ['8', '5', '4', '1', '9', '151', '17', '37', '15', '12'];
 export function cfbConfRank(id) {
@@ -176,10 +185,13 @@ const statNum = (e, t) => num(stat(e, t));
 
 function standingRow(entry, league, idx) {
   const t = normalizeTeam(entry.team, league);
-  const wins = statNum(entry, 'wins') ?? 0;
-  const losses = statNum(entry, 'losses') ?? 0;
-  const ties = statNum(entry, 'ties') ?? 0;
-  const overall = stat(entry, 'total') || stat(entry, 'overall') || `${wins}-${losses}${ties ? `-${ties}` : ''}`;
+  // CFB standings have no `losses` stat, so read W-L(-T) from the overall summary when present.
+  const summary = String(stat(entry, 'total') || stat(entry, 'overall') || '');
+  const m = summary.match(/^(\d+)-(\d+)(?:-(\d+))?$/);
+  const wins = m ? +m[1] : statNum(entry, 'wins') ?? 0;
+  const losses = m ? +m[2] : statNum(entry, 'losses') ?? 0;
+  const ties = m ? +(m[3] || 0) : statNum(entry, 'ties') ?? 0;
+  const overall = summary || `${wins}-${losses}${ties ? `-${ties}` : ''}`;
   return {
     ...t,
     order: idx,
@@ -189,7 +201,7 @@ function standingRow(entry, league, idx) {
     wins,
     losses,
     ties,
-    pct: statNum(entry, 'winpercent') ?? (wins + losses + ties ? (wins + ties / 2) / (wins + losses + ties) : 0),
+    pct: wins + losses + ties ? (wins + ties / 2) / (wins + losses + ties) : 0,
     pf: statNum(entry, 'pointsfor'),
     pa: statNum(entry, 'pointsagainst'),
     streak: String(stat(entry, 'streak') || ''),
@@ -206,14 +218,22 @@ function flattenChildren(node) {
 export function normalizeStandings(raw, league, nflGroups) {
   const season = num(raw.children?.[0]?.standings?.season) ?? num(raw.season);
   if (league === 'cfb') {
-    const groups = flattenChildren(raw).map((c) => ({
-      id: String(c.id),
-      name: c.name,
-      abbr: c.abbreviation || c.shortName || c.name,
-      logo: confLogo('cfb', c.id),
-      teams: c.standings.entries.map((e, i) => standingRow(e, league, i)),
-    }));
-    return { league, season, groups };
+    const groups = new Map();
+    for (const c of flattenChildren(raw)) {
+      // Conferences with divisions (Sun Belt East/West) are merged into the parent conference,
+      // since games carry the parent's conferenceId. Each team keeps its rank within its division.
+      const div = CFB_DIVISIONS[String(c.id)];
+      const id = div ? div.parent : String(c.id);
+      if (!groups.has(id)) {
+        groups.set(id, { id, name: div ? div.name : c.name, abbr: CFB_CONF_ABBR[id] || c.shortName || c.abbreviation || c.name, logo: confLogo('cfb', id), teams: [], divisions: [] });
+      }
+      const g = groups.get(id);
+      const teams = c.standings.entries.map((e, i) => standingRow(e, league, i));
+      g.teams.push(...teams);
+      if (div) g.divisions.push({ name: c.name.replace(/^.*-\s*/, ''), teams });
+    }
+    for (const g of groups.values()) if (!g.divisions.length) delete g.divisions;
+    return { league, season, groups: [...groups.values()] };
   }
   const divOf = {};
   for (const conf of nflGroups?.groups || []) {

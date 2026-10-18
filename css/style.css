@@ -292,3 +292,5 @@ select option { background: var(--bg-2); }
   html { scroll-behavior: auto; }
 }
 .standings-grid { max-width: 760px; }
+.div-title { font: 600 12px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin: 12px 4px 6px; }
+.div-title:first-of-type { margin-top: 0; }

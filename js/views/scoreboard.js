@@ -35,7 +35,7 @@ function sideHTML(g, side, league, fbsConfs) {
   return `<div class="side ${cls}">
     <a href="${teamHref(league, t.id)}" aria-hidden="true" tabindex="-1">${logo(t.logo, t.abbr)}</a>
     <div class="who">
-      <span class="nm">${t.rank ? `<span class="rank">${t.rank}</span>` : ''}<a href="${teamHref(league, t.id)}">${esc(t.short || t.name)}</a>${fcs}</span>
+      <span class="nm">${t.rank ? `<span class="rank">${t.rank}</span>` : ''}<a href="${teamHref(league, t.id)}">${esc(league === 'cfb' ? t.name || t.short : t.short || t.name)}</a>${fcs}</span>
       ${rec ? `<span class="rec">${esc(rec)}</span>` : ''}
     </div>
     <span class="score">${t.score ?? ''}</span>

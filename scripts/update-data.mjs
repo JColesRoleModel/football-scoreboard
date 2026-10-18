@@ -178,7 +178,8 @@ async function archiveRankings(season, calendar, prev) {
       const onDisk = await readJSON(join(DATA, dir, file));
       if (onDisk && known.has(file)) { out.push({ type: t.type, week: w.value, file, label: onDisk.label }); continue; }
       try {
-        const poll = await corePoll(season, t.type, w.value);
+        // The preseason poll sometimes lives under the preseason season type.
+        const poll = (await corePoll(season, t.type, w.value)) || (t.type === 2 && w.value === 1 ? await corePoll(season, 1, 1) : null);
         if (!poll) continue;
         const stored = await writeIfChanged(`${dir}/${file}`, normalizeRanking(poll));
         out.push({ type: t.type, week: w.value, file, label: stored.label });
