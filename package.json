@@ -1,0 +1,11 @@
+{
+  "name": "football-scoreboard",
+  "private": true,
+  "type": "module",
+  "description": "Ad-free NFL and FBS scoreboard. No build step: the repo is the site.",
+  "scripts": {
+    "update-data": "node scripts/update-data.mjs",
+    "serve": "npx serve ."
+  },
+  "engines": { "node": ">=20" }
+}
