@@ -1,5 +1,5 @@
 // Service worker: offline app shell, cached logos, network-first data, and notification clicks.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL = `shell-${VERSION}`;
 const RUNTIME = 'runtime';
 const LOGOS = 'logos';
@@ -7,7 +7,7 @@ const LOGOS = 'logos';
 const SHELL_FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/app.js', 'js/api.js', 'js/normalize.js', 'js/ui.js', 'js/starfield.js', 'js/prefs.js', 'js/alerts.js',
-  'js/views/scoreboard.js', 'js/views/standings.js', 'js/views/poll.js', 'js/views/team.js', 'js/views/myteams.js',
+  'js/views/scoreboard.js', 'js/views/standings.js', 'js/views/poll.js', 'js/views/team.js', 'js/views/myteams.js', 'js/views/livenow.js',
   'assets/icon.svg', 'assets/favicon.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/apple-touch-icon.png',
 ];
 

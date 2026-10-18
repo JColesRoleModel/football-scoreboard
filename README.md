@@ -7,6 +7,8 @@ Live site: https://jcolesrolemodel.github.io/football-scoreboard/
 
 ## What's in it
 
+- **Live Now**: every live NFL and CFB game together at the top of the scores page,
+  close late games first, refreshing every 30 seconds on its own.
 - **Scores**: NFL / CFB toggle and a week picker covering the whole season
   (preseason, regular season, bowls and playoffs).
   - CFB games are grouped by conference and ordered by conference standings. A

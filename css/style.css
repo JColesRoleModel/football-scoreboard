@@ -390,3 +390,14 @@ dialog.sheet::backdrop { background: rgba(4, 3, 16, 0.6); backdrop-filter: blur(
 .settings { padding: 6px 14px 12px; }
 .settings .check:first-child { border-top: 0; }
 .install-tip { padding: 12px 14px; font-size: 13px; color: var(--muted); }
+
+/* ---------- Live Now ---------- */
+.live-now { margin-top: 0; padding: 12px 12px 4px; border-radius: var(--radius); border: 1px solid rgba(98, 240, 228, 0.35); background: linear-gradient(180deg, rgba(98, 240, 228, 0.08), rgba(98, 240, 228, 0.02)); }
+.live-now > .section-head h2 { color: var(--aqua); }
+.live-now > .collapse-body { padding-bottom: 8px; }
+.sec-icon.live { border-color: rgba(98, 240, 228, 0.5); background: var(--aqua-dim); }
+.tag.lg { font-size: 9px; padding: 1px 5px; margin-right: 2px; color: var(--text); border-color: var(--border-strong); }
+.live-idle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+.dot-idle { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
+#livenow:empty { display: none; }
+#livenow + .toolbar { margin-top: 14px; }

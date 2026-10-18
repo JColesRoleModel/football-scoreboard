@@ -8,6 +8,7 @@ import {
 } from '../ui.js';
 import { favoriteIds, alertTypesFor, onPrefsChange } from '../prefs.js';
 import { registerGames } from '../alerts.js';
+import { mountLiveNow } from './livenow.js';
 
 export function statusText(g) {
   const s = g.status;
@@ -53,7 +54,7 @@ const gameSig = (g, league) => [
 
 const BELL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 1112 0v5l2 2H4l2-2zM10 20a2 2 0 004 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-export function gameCard(g, league, fbsConfs) {
+export function gameCard(g, league, fbsConfs, showLeague = false) {
   const live = g.status.state === 'in';
   const upset = league === 'cfb' && isUpset(g);
   const alertOn = !!alertTypesFor(league, g);
@@ -61,7 +62,7 @@ export function gameCard(g, league, fbsConfs) {
   const sit = live && g.situation?.down ? `<div class="game-sit${g.situation.redZone ? ' rz' : ''}">${esc(g.situation.down)}${g.situation.redZone ? ' · Red zone' : ''}</div>` : '';
   return `<article class="glass game${live ? ' live' : ''}" data-id="${esc(g.id)}" data-sig="${esc(gameSig(g, league))}">
     <div class="game-meta">
-      <span class="status">${live ? '<span class="pulse" aria-hidden="true"></span>' : ''}${esc(statusText(g))}${upset ? ' <span class="tag upset">Upset</span>' : ''}</span>
+      <span class="status">${showLeague ? `<span class="tag lg">${league === 'nfl' ? 'NFL' : 'CFB'}</span>` : ''}${live ? '<span class="pulse" aria-hidden="true"></span>' : ''}${esc(statusText(g))}${upset ? ' <span class="tag upset">Upset</span>' : ''}</span>
       <span class="meta-right"><span class="tv">${esc(g.tv)}</span>${canAlert ? `<button type="button" class="bell${alertOn ? ' on' : ''}" data-league="${league}" data-game="${esc(g.id)}" aria-label="${alertOn ? 'Edit alerts' : 'Set alerts'} for ${esc(g.name)}">${BELL}</button>` : ''}</span>
     </div>
     ${sideHTML(g, 'away', league, fbsConfs)}
@@ -186,8 +187,9 @@ export async function render(el, route, ctx) {
   const [type, week] = (route.week || '').split('-').map(Number);
   const opts = Number.isFinite(week) ? { seasonType: type, week } : {};
 
-  el.innerHTML = `<div class="toolbar"><h1>${league === 'nfl' ? 'NFL' : 'College Football'}</h1><div class="week-picker" id="wp"></div></div><div id="note"></div><div id="games">${skeletonCards()}</div>`;
+  el.innerHTML = `<div id="livenow"></div><div class="toolbar"><h1>${league === 'nfl' ? 'NFL' : 'College Football'}</h1><div class="week-picker" id="wp"></div></div><div id="note"></div><div id="games">${skeletonCards()}</div>`;
 
+  const stopLive = mountLiveNow(el.querySelector('#livenow'), ctx);
   const index = await getIndex();
   const standingsP = getStandings(league).catch(() => null);
   let res;
@@ -262,7 +264,7 @@ export async function render(el, route, ctx) {
   // Auto-refresh the current week in place: swap only the cards that changed,
   // so the page keeps its scroll position.
   const isCurrentWeek = !Number.isFinite(week) || (calendar?.current && curType === calendar.current.type && curWeek === calendar.current.week);
-  if (!isCurrentWeek) return offPrefs;
+  if (!isCurrentWeek) return () => { offPrefs(); stopLive(); };
 
   let timer = 0;
   const nextDelay = (games) => {
@@ -282,7 +284,7 @@ export async function render(el, route, ctx) {
           last = r.data;
           redraw();
         } else {
-          for (const card of el.querySelectorAll('.game[data-id]')) {
+          for (const card of el.querySelectorAll('#games .game[data-id]')) {
             const g = fresh.get(card.dataset.id);
             if (card.dataset.sig !== gameSig(g, league)) card.outerHTML = gameCard(g, league, fbsConfs);
           }
@@ -293,5 +295,5 @@ export async function render(el, route, ctx) {
     timer = setTimeout(tick, nextDelay(last.games));
   };
   timer = setTimeout(tick, nextDelay(data.games));
-  return () => { clearTimeout(timer); offPrefs(); };
+  return () => { clearTimeout(timer); offPrefs(); stopLive(); };
 }
