@@ -73,11 +73,13 @@ export async function getScoreboard(league, opts = {}) {
   };
   // Past weeks prefer the archive (cheap, stable); the current week prefers live.
   const order = isCurrent ? [fromLive, fromArchive] : [fromArchive, fromLive];
-  let lastErr;
-  for (const fn of order) {
-    try { return await fn(); } catch (e) { lastErr = e; }
+  try {
+    return await order[0]();
+  } catch {
+    const res = await order[1]();
+    // Only a missed live call is worth flagging; past weeks come from the archive by design.
+    return { ...res, fallback: res.source === 'archive' };
   }
-  throw lastErr;
 }
 
 export async function getStandings(league) {
@@ -90,7 +92,7 @@ export async function getStandings(league) {
     return { data, source: 'live', updated: new Date().toISOString() };
   } catch {
     const file = await archive(`${league}/standings.json`);
-    return { data: file, source: 'archive', updated: file.updated };
+    return { data: file, source: 'archive', updated: file.updated, fallback: true };
   }
 }
 
@@ -106,7 +108,7 @@ export async function getCurrentRanking() {
     const last = list[list.length - 1];
     if (!last) throw new Error('No rankings available');
     const file = await archive(`cfb/${index.cfb.season}/rankings/${last.file}`);
-    return { data: file, source: 'archive', updated: file.updated };
+    return { data: file, source: 'archive', updated: file.updated, fallback: true };
   }
 }
 
@@ -142,6 +144,6 @@ export async function getTeamSchedule(league, id) {
     const games = weeks.filter(Boolean).flatMap((w) => w.games).filter((g) => g.home.id === id || g.away.id === id);
     const g0 = games[0];
     const team = g0 ? (g0.home.id === id ? g0.home : g0.away) : { id };
-    return { data: { team: { ...team, record: '', standing: '' }, games }, source: 'archive', updated: info.updated };
+    return { data: { team: { ...team, record: '', standing: '' }, games }, source: 'archive', updated: info.updated, fallback: true };
   }
 }
