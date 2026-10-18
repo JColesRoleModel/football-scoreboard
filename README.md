@@ -22,6 +22,19 @@ Live site: https://jcolesrolemodel.github.io/football-scoreboard/
 - **Team pages**: tap any team for its schedule and results, record, standing and AP
   rank history.
 
+- **My Teams**: star any team (on its page or by searching on the My Teams tab). Your
+  teams are saved on your device, their games show first on the scoreboard, and their
+  conferences and divisions come first in scores and standings.
+- **Alerts**: tap the bell on any upcoming or live game to choose scoring updates,
+  quarter updates (kickoff, end of each quarter, halftime, final) and changes of
+  possession, or turn on alerts for every game your teams play. GitHub Pages has no
+  server to push from, so alerts fire while the app is open or running in the
+  background. On iPhone, add the app to your Home Screen first.
+- **Collapsible sections**: every conference, division, AFC and NFC header has an arrow
+  on the right to fold it away. The choice is remembered on your device.
+- **Installable app**: add it to your Home Screen for a full-screen app with the
+  football icon. It keeps working offline with the last scores it saw.
+
 ## How the data flows
 
 ```
@@ -86,4 +99,5 @@ GitHub Pages serves the `main` branch root (Settings → Pages → Deploy from a
 ## Privacy
 
 The only outside requests are to ESPN (data and logos) and Google Fonts. There are no
-analytics, cookies or ads. The site remembers your last league in local storage.
+analytics, cookies or ads. Your league, favorite teams, alert choices and folded sections
+stay in your browser's local storage and never leave your device.

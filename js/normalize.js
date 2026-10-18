@@ -121,6 +121,13 @@ export function normalizeEvent(ev, league) {
     else if (away.score > home.score) away.winner = true;
   }
   const ot = status.state === 'post' && status.period > 4;
+  const sit = comp.situation;
+  const situation = status.state === 'in' && sit ? {
+    poss: sit.possession ? String(sit.possession) : '',
+    down: sit.shortDownDistanceText || sit.downDistanceText || '',
+    redZone: !!sit.isRedZone,
+    lastPlay: sit.lastPlay?.text || '',
+  } : null;
   return {
     id: String(ev.id),
     date: comp.date || ev.date,
@@ -133,6 +140,7 @@ export function normalizeEvent(ev, league) {
     venue: comp.venue?.fullName || '',
     seasonType: num(ev.season?.type) ?? null,
     week: num(ev.week?.number) ?? null,
+    situation,
     home,
     away,
   };

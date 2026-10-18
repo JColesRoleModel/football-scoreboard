@@ -4,8 +4,10 @@
 import { getScoreboard, getStandings, getIndex } from '../api.js';
 import { confLogo, cfbConfRank } from '../normalize.js';
 import {
-  esc, logo, teamHref, sourceNote, fmtKickoff, skeletonCards, emptyState, setChips,
+  esc, logo, teamHref, sourceNote, fmtKickoff, skeletonCards, emptyState, setChips, collapsible,
 } from '../ui.js';
+import { favoriteIds, alertTypesFor, onPrefsChange } from '../prefs.js';
+import { registerGames } from '../alerts.js';
 
 export function statusText(g) {
   const s = g.status;
@@ -32,28 +34,39 @@ function sideHTML(g, side, league, fbsConfs) {
   const cls = decided ? (t.winner ? 'win' : 'lose') : '';
   const fcs = league === 'cfb' && fbsConfs && !fbsConfs.has(t.confId) ? '<span class="tag fcs">FCS</span>' : '';
   const rec = [t.record, league === 'cfb' && t.confRecord ? `(${t.confRecord})` : ''].filter(Boolean).join(' ');
-  return `<div class="side ${cls}">
+  const hasBall = g.situation?.poss && g.situation.poss === t.id;
+  const fav = favoriteIds(league).has(t.id);
+  return `<div class="side ${cls}${fav ? ' fav' : ''}">
     <a href="${teamHref(league, t.id)}" aria-hidden="true" tabindex="-1">${logo(t.logo, t.abbr)}</a>
     <div class="who">
-      <span class="nm">${t.rank ? `<span class="rank">${t.rank}</span>` : ''}<a href="${teamHref(league, t.id)}">${esc(league === 'cfb' ? t.name || t.short : t.short || t.name)}</a>${fcs}</span>
+      <span class="nm">${t.rank ? `<span class="rank">${t.rank}</span>` : ''}<a href="${teamHref(league, t.id)}">${esc(league === 'cfb' ? t.name || t.short : t.short || t.name)}</a>${fav ? '<span class="fav-star" title="Your team">★</span>' : ''}${fcs}${hasBall ? '<span class="poss" title="Has the ball" aria-label="has the ball"></span>' : ''}</span>
       ${rec ? `<span class="rec">${esc(rec)}</span>` : ''}
     </div>
     <span class="score">${t.score ?? ''}</span>
   </div>`;
 }
 
-const gameSig = (g) => [statusText(g), g.home.score, g.away.score, g.home.winner, g.away.winner, g.home.rank, g.away.rank, g.tv, g.note].join('|');
+const gameSig = (g, league) => [
+  statusText(g), g.home.score, g.away.score, g.home.winner, g.away.winner, g.home.rank, g.away.rank, g.tv, g.note,
+  g.situation?.poss, g.situation?.down, JSON.stringify(alertTypesFor(league, g)),
+].join('|');
+
+const BELL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 1112 0v5l2 2H4l2-2zM10 20a2 2 0 004 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 export function gameCard(g, league, fbsConfs) {
   const live = g.status.state === 'in';
   const upset = league === 'cfb' && isUpset(g);
-  return `<article class="glass game${live ? ' live' : ''}" data-id="${esc(g.id)}" data-sig="${esc(gameSig(g))}">
+  const alertOn = !!alertTypesFor(league, g);
+  const canAlert = g.status.state !== 'post' && !g.status.postponed;
+  const sit = live && g.situation?.down ? `<div class="game-sit${g.situation.redZone ? ' rz' : ''}">${esc(g.situation.down)}${g.situation.redZone ? ' · Red zone' : ''}</div>` : '';
+  return `<article class="glass game${live ? ' live' : ''}" data-id="${esc(g.id)}" data-sig="${esc(gameSig(g, league))}">
     <div class="game-meta">
       <span class="status">${live ? '<span class="pulse" aria-hidden="true"></span>' : ''}${esc(statusText(g))}${upset ? ' <span class="tag upset">Upset</span>' : ''}</span>
-      <span class="tv">${esc(g.tv)}</span>
+      <span class="meta-right"><span class="tv">${esc(g.tv)}</span>${canAlert ? `<button type="button" class="bell${alertOn ? ' on' : ''}" data-league="${league}" data-game="${esc(g.id)}" aria-label="${alertOn ? 'Edit alerts' : 'Set alerts'} for ${esc(g.name)}">${BELL}</button>` : ''}</span>
     </div>
     ${sideHTML(g, 'away', league, fbsConfs)}
     ${sideHTML(g, 'home', league, fbsConfs)}
+    ${sit}
     ${g.note ? `<div class="game-note">${esc(g.note)}</div>` : ''}
   </article>`;
 }
@@ -78,7 +91,9 @@ function groupCFB(games, standings) {
     }
   }
   const sections = [...confs.values()].filter((c) => c.games.length);
-  sections.sort((a, b) => cfbConfRank(a.id) - cfbConfRank(b.id) || a.name.localeCompare(b.name));
+  const favs = favoriteIds('cfb');
+  const hasFav = (c) => (c.teams || []).some((t) => favs.has(t.id)) ? 0 : 1;
+  sections.sort((a, b) => hasFav(a) - hasFav(b) || cfbConfRank(a.id) - cfbConfRank(b.id) || a.name.localeCompare(b.name));
   for (const c of sections) {
     const best = (g) => Math.min(c.pos.get(g.home.id) ?? 999, c.pos.get(g.away.id) ?? 999);
     c.games.sort((a, b) => best(a) - best(b) || byKickoff(a, b));
@@ -101,11 +116,14 @@ function groupNFL(games, standings) {
     const best = (g) => Math.min(d.pos.get(g.home.id) ?? 99, d.pos.get(g.away.id) ?? 99);
     d.games.sort((a, b) => best(a) - best(b) || byKickoff(a, b));
   }
+  const favs = favoriteIds('nfl');
+  const hasFav = (d) => (d.teams.some((t) => favs.has(t.id)) ? 0 : 1);
   const out = [];
   for (const conf of ['AFC', 'NFC']) {
-    const sections = divs.filter((d) => d.conf === conf && d.games.length);
-    if (sections.length) out.push({ title: conf, logo: confLogo('nfl', conf), sections });
+    const sections = divs.filter((d) => d.conf === conf && d.games.length).sort((a, b) => hasFav(a) - hasFav(b));
+    if (sections.length) out.push({ title: conf, logo: confLogo('nfl', conf), sections, fav: sections.some((d) => !hasFav(d)) });
   }
+  out.sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0));
   if (other.games.length) out.push({ title: null, sections: [other] });
   return out;
 }
@@ -126,14 +144,41 @@ function weekOptions(calendar) {
   return opts;
 }
 
+// Your teams' games first, then (CFB) every game with a ranked team, best rank first.
+function prioritySections(games, league) {
+  const favs = favoriteIds(league);
+  const out = [];
+  const mine = games.filter((g) => favs.has(g.home.id) || favs.has(g.away.id)).sort(byKickoff);
+  if (mine.length) out.push({ id: 'mine', name: 'My Teams', abbr: '★', icon: '<span class="sec-icon star">★</span>', games: mine });
+  if (league === 'cfb') {
+    const best = (g) => Math.min(g.home.rank || 99, g.away.rank || 99);
+    const ranked = games.filter((g) => best(g) < 99).sort((a, b) => best(a) - best(b) || byKickoff(a, b));
+    if (ranked.length) out.push({ id: 'top25', name: 'Top 25', abbr: 'AP', icon: '<span class="sec-icon ap">AP</span>', games: ranked });
+  }
+  return out.length ? [{ title: null, sections: out }] : [];
+}
+
+function sectionHTML(s, league, fbsConfs) {
+  return collapsible({
+    key: `scores:${league}:${s.id}`,
+    id: `sec-${s.id}`,
+    head: `${s.icon || (s.logo !== undefined ? logo(s.logo, s.abbr, 30) : '')}<h2>${esc(s.name)}</h2><span class="count">${s.games.length}</span>`,
+    body: `<div class="grid">${s.games.map((g) => gameCard(g, league, fbsConfs)).join('')}</div>`,
+  });
+}
+
 function sectionsHTML(groups, league, fbsConfs) {
-  return groups.map((grp) => `
-    ${grp.title ? `<h2 class="conf-title" id="conf-${esc(grp.title)}">${esc(grp.title)}</h2>` : ''}
-    ${grp.sections.map((s) => `
-      <section class="section" id="sec-${esc(s.id)}">
-        <div class="section-head">${s.logo !== undefined ? logo(s.logo, s.abbr, 30) : ''}<h2>${esc(s.name)}</h2></div>
-        <div class="grid">${s.games.map((g) => gameCard(g, league, fbsConfs)).join('')}</div>
-      </section>`).join('')}`).join('');
+  return groups.map((grp) => {
+    const inner = grp.sections.map((s) => sectionHTML(s, league, fbsConfs)).join('');
+    if (!grp.title) return inner;
+    return collapsible({
+      key: `scores:${league}:conf-${grp.title}`,
+      id: `conf-${grp.title}`,
+      level: 'conf',
+      head: `${logo(grp.logo, grp.title, 34)}<h2 class="conf-title">${esc(grp.title)}</h2>`,
+      body: inner,
+    });
+  }).join('');
 }
 
 export async function render(el, route, ctx) {
@@ -191,8 +236,10 @@ export async function render(el, route, ctx) {
     else if (standings?.groups?.length) groups = groupNFL(games, standings);
     else groups = flatSection(games, 'Games', league);
 
+    registerGames(league, games);
+    groups = [...prioritySections(games, league), ...groups];
     const chips = groups.flatMap((g) => g.sections).filter((s) => s.id !== 'all')
-      .map((s) => ({ target: `sec-${s.id}`, label: league === 'nfl' ? s.name.replace(/^(AFC|NFC) /, '$1 ') : s.abbr, logo: s.logo, abbr: s.abbr }));
+      .map((s) => ({ target: `sec-${s.id}`, label: s.id === 'mine' || s.id === 'top25' || league === 'nfl' ? s.name : s.abbr, logo: s.logo, abbr: s.abbr }));
     setChips(chips.length > 1 ? chips : null);
 
     const byes = (d.byes || []).length
@@ -204,13 +251,20 @@ export async function render(el, route, ctx) {
   el.querySelector('#note').innerHTML = sourceNote(res);
   el.querySelector('#games').innerHTML = draw(data);
 
+  let last = data;
+  const redraw = () => {
+    const y = window.scrollY;
+    el.querySelector('#games').innerHTML = draw(last);
+    window.scrollTo(0, y);
+  };
+  const offPrefs = onPrefsChange((kind) => { if (kind !== 'collapsed') redraw(); });
+
   // Auto-refresh the current week in place: swap only the cards that changed,
   // so the page keeps its scroll position.
   const isCurrentWeek = !Number.isFinite(week) || (calendar?.current && curType === calendar.current.type && curWeek === calendar.current.week);
-  if (!isCurrentWeek) return;
+  if (!isCurrentWeek) return offPrefs;
 
   let timer = 0;
-  let last = data;
   const nextDelay = (games) => {
     if (games.some((g) => g.status.state === 'in')) return 30_000;
     const soon = games.some((g) => g.status.state === 'pre' && new Date(g.date) - Date.now() < 20 * 60_000 && !g.status.postponed);
@@ -225,13 +279,12 @@ export async function render(el, route, ctx) {
         const fresh = new Map(r.data.games.map((g) => [g.id, g]));
         const sameSet = r.data.games.length === last.games.length && last.games.every((g) => fresh.has(g.id));
         if (!sameSet) {
-          const y = window.scrollY;
-          el.querySelector('#games').innerHTML = draw(r.data);
-          window.scrollTo(0, y);
+          last = r.data;
+          redraw();
         } else {
           for (const card of el.querySelectorAll('.game[data-id]')) {
             const g = fresh.get(card.dataset.id);
-            if (card.dataset.sig !== gameSig(g)) card.outerHTML = gameCard(g, league, fbsConfs);
+            if (card.dataset.sig !== gameSig(g, league)) card.outerHTML = gameCard(g, league, fbsConfs);
           }
         }
         last = r.data;
@@ -240,5 +293,5 @@ export async function render(el, route, ctx) {
     timer = setTimeout(tick, nextDelay(last.games));
   };
   timer = setTimeout(tick, nextDelay(data.games));
-  return () => clearTimeout(timer);
+  return () => { clearTimeout(timer); offPrefs(); };
 }

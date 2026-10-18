@@ -6,6 +6,7 @@
 //   #/standings/{league}
 //   #/poll[/{seasonType}-{week}]
 //   #/team/{league}/{id}
+//   #/my
 
 import { startStarfield } from './starfield.js';
 import { setChips } from './ui.js';
@@ -13,6 +14,8 @@ import * as scoreboard from './views/scoreboard.js';
 import * as standings from './views/standings.js';
 import * as poll from './views/poll.js';
 import * as team from './views/team.js';
+import * as myteams from './views/myteams.js';
+import { watch } from './alerts.js';
 
 const view = document.getElementById('view');
 let cleanup = null;
@@ -28,6 +31,7 @@ function parse() {
   const saved = store.get('league', 'nfl');
   if (tab === 'poll') return { tab, league: 'cfb', week: rest[0] };
   if (tab === 'team') return { tab, league: rest[0] === 'nfl' ? 'nfl' : 'cfb', id: rest[1] };
+  if (tab === 'my') return { tab, league: saved };
   const league = rest[0] === 'cfb' || rest[0] === 'nfl' ? rest[0] : saved;
   return { tab: tab === 'standings' ? 'standings' : 'scores', league, week: rest[1] };
 }
@@ -39,7 +43,7 @@ function updateShell(route) {
   }
   for (const a of document.querySelectorAll('.tabs a')) {
     const t = a.dataset.tab;
-    a.href = t === 'poll' ? '#/poll' : `#/${t}/${route.league}`;
+    a.href = t === 'poll' || t === 'my' ? `#/${t}` : `#/${t}/${route.league}`;
     a.hidden = a.hasAttribute('data-cfb-only') && route.league !== 'cfb';
     if (t === route.tab) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
@@ -54,7 +58,7 @@ async function route() {
   cleanup = null;
   setChips(null);
   const id = ++renderId;
-  const views = { scores: scoreboard, standings, poll, team };
+  const views = { scores: scoreboard, standings, poll, team, my: myteams };
   const ctx = { isCurrent: () => id === renderId };
   try {
     const c = await views[r.tab].render(view, r, ctx);
@@ -85,3 +89,9 @@ new ResizeObserver(() => document.documentElement.style.setProperty('--top-h', `
 
 startStarfield(document.getElementById('stars'));
 route();
+watch();
+
+// Offline support and installability. Relative path so it works under /football-scoreboard/.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}

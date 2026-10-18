@@ -84,7 +84,13 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing:
 }
 .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 1100px; margin: 0 auto; }
 .brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 24px; font-weight: 700; }
-.brand svg { width: 20px; height: 20px; color: var(--gold); filter: drop-shadow(0 0 6px rgba(244, 199, 106, 0.6)); }
+.brand svg { width: 26px; height: 26px; flex: none; filter: drop-shadow(0 0 6px rgba(244, 199, 106, 0.45)); }
+.brand { font-size: clamp(18px, 5.3vw, 24px); min-width: 0; }
+.brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.league-toggle { flex: none; }
+.tabs { overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { flex: none; white-space: nowrap; }
 .league-toggle { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); }
 .league-toggle button {
   border: 0; background: none; padding: 6px 16px; border-radius: 999px; cursor: pointer;
@@ -294,3 +300,93 @@ select option { background: var(--bg-2); }
 .standings-grid { max-width: 760px; }
 .div-title { font: 600 12px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin: 12px 4px 6px; }
 .div-title:first-of-type { margin-top: 0; }
+
+/* ---------- Collapsible sections ---------- */
+.toggle {
+  width: 100%; border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-head.toggle { margin-bottom: 10px; min-height: 36px; }
+.conf-head.toggle { margin: 22px 0 4px; min-height: 44px; }
+.conf-head .conf-title { margin: 0; }
+.toggle h2 { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toggle .chev {
+  width: 30px; height: 30px; padding: 5px; margin-left: auto; flex: none; border-radius: 50%;
+  color: var(--muted); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+.toggle:hover .chev, .toggle:focus-visible .chev { color: var(--text); border-color: var(--border-strong); }
+.collapsed > .toggle .chev { transform: rotate(-90deg); }
+.collapsed > .section-head.toggle { margin-bottom: 0; }
+.section.collapsible { margin: 16px 0 6px; }
+.conf-block.collapsed { margin-bottom: 8px; }
+.count { font: 600 11px var(--font-mono); color: var(--faint); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); flex: none; }
+.sec-icon {
+  width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  font: 700 13px var(--font-body); border: 1px solid rgba(244, 199, 106, 0.45); background: var(--gold-dim); color: var(--gold);
+}
+.sec-icon.ap { font-size: 11px; letter-spacing: 0.04em; }
+
+/* ---------- Favorites ---------- */
+.fav-star { color: var(--gold); font-size: 12px; margin-left: 2px; }
+.side.fav .nm a { color: var(--text); }
+.table tr.fav td { background: rgba(244, 199, 106, 0.07); }
+.fav-btn {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  font-weight: 600; font-size: 13px; color: var(--muted); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
+}
+.fav-btn[aria-pressed="true"] { color: var(--gold); border-color: rgba(244, 199, 106, 0.5); background: var(--gold-dim); }
+
+/* ---------- Bell, possession, situation ---------- */
+.meta-right { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.bell {
+  width: 30px; height: 30px; margin: -6px -6px -6px 0; padding: 6px; flex: none; border: 0; border-radius: 50%;
+  background: none; color: var(--faint); cursor: pointer;
+}
+.bell svg { width: 100%; height: 100%; display: block; }
+.bell:hover { color: var(--text); }
+.bell.on { color: var(--gold); }
+.bell.on svg path { fill: rgba(244, 199, 106, 0.25); }
+.poss { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); display: inline-block; margin-left: 4px; align-self: center; box-shadow: 0 0 8px rgba(244, 199, 106, 0.8); }
+.game-sit { font: 500 11px var(--font-mono); color: var(--aqua); margin-top: 6px; }
+.game-sit.rz { color: var(--rose); }
+
+/* ---------- Alert sheet ---------- */
+dialog.sheet {
+  width: min(440px, calc(100vw - 32px)); padding: 18px; color: var(--text);
+  background: rgba(20, 16, 52, 0.96); border: 1px solid var(--border-strong);
+}
+dialog.sheet::backdrop { background: rgba(4, 3, 16, 0.6); backdrop-filter: blur(3px); }
+.sheet-form h3 { font-size: 22px; margin-bottom: 12px; }
+.check { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid rgba(200, 186, 255, 0.08); cursor: pointer; }
+.check input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--aqua); flex: none; }
+.check b { display: block; font-weight: 600; }
+.check small { color: var(--faint); font-size: 12px; }
+.sheet-hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.sheet-hint.warn { color: var(--gold); }
+.sheet-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+.btn { padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.05); }
+.btn.primary { background: var(--aqua-dim); color: var(--aqua); border-color: rgba(98, 240, 228, 0.45); }
+.btn.ghost { color: var(--muted); }
+
+/* ---------- Toasts ---------- */
+#toasts { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 50; display: grid; gap: 8px; width: min(420px, calc(100vw - 32px)); pointer-events: none; }
+.toast { padding: 10px 14px; font-size: 13px; background: rgba(20, 16, 52, 0.95); border-color: var(--border-strong); }
+
+/* ---------- My Teams ---------- */
+.myteam { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid rgba(200, 186, 255, 0.08); }
+.myteam:first-child { border-top: 0; }
+.myteam .logo { width: 40px; height: 40px; }
+.myteam .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.myteam .sub { font-size: 12px; color: var(--muted); }
+.icon-x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+.search { width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--text); font: 15px var(--font-body); }
+.search-results { margin-top: 8px; }
+.result { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border: 0; border-top: 1px solid rgba(200, 186, 255, 0.08); background: none; cursor: pointer; text-align: left; }
+.result:first-child { border-top: 0; }
+.result .lg { margin-left: auto; font-size: 11px; color: var(--faint); font-weight: 600; letter-spacing: 0.06em; }
+.result .add { color: var(--aqua); font-weight: 600; font-size: 13px; }
+.result .add.on { color: var(--gold); }
+.settings { padding: 6px 14px 12px; }
+.settings .check:first-child { border-top: 0; }
+.install-tip { padding: 12px 14px; font-size: 13px; color: var(--muted); }

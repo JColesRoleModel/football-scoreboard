@@ -1,5 +1,7 @@
 // Small DOM helpers shared by the views.
 
+import { isCollapsed, setCollapsed } from './prefs.js';
+
 export const $ = (sel, root = document) => root.querySelector(sel);
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -78,3 +80,47 @@ document.addEventListener('click', (e) => {
   if (!chip) return;
   document.getElementById(chip.dataset.target)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 });
+
+// ---- Collapsible sections ----
+// A header button with a chevron on the right; open/closed state is remembered on this device.
+
+const CHEVRON = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+export function collapsible({ key, id = '', head, body, cls = '', level = 'section' }) {
+  const closed = isCollapsed(key);
+  const bodyId = `body-${key.replace(/[^\w-]/g, '_')}`;
+  return `<section class="${level === 'conf' ? 'conf-block' : 'section'} collapsible ${cls}${closed ? ' collapsed' : ''}"${id ? ` id="${esc(id)}"` : ''} data-key="${esc(key)}">
+    <button type="button" class="${level === 'conf' ? 'conf-head' : 'section-head'} toggle" aria-expanded="${!closed}" aria-controls="${bodyId}">
+      ${head}${CHEVRON}
+    </button>
+    <div class="collapse-body" id="${bodyId}"${closed ? ' hidden' : ''}>${body}</div>
+  </section>`;
+}
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.collapsible > .toggle');
+  if (!btn) return;
+  const sec = btn.parentElement;
+  const closed = !sec.classList.contains('collapsed');
+  sec.classList.toggle('collapsed', closed);
+  btn.setAttribute('aria-expanded', String(!closed));
+  sec.querySelector(':scope > .collapse-body').hidden = closed;
+  setCollapsed(sec.dataset.key, closed);
+});
+
+// ---- Toasts ----
+export function toast(msg, ms = 4000) {
+  let host = document.getElementById('toasts');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'toasts';
+    host.setAttribute('role', 'status');
+    host.setAttribute('aria-live', 'polite');
+    document.body.appendChild(host);
+  }
+  const t = document.createElement('div');
+  t.className = 'toast glass';
+  t.textContent = msg;
+  host.appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}

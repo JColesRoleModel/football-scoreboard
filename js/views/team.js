@@ -3,6 +3,7 @@
 import { getTeamSchedule, getStandings, getRankingHistory } from '../api.js';
 import { esc, logo, teamHref, sourceNote, skeletonTable, emptyState, fmtDate, fmtKickoff } from '../ui.js';
 import { statusText } from './scoreboard.js';
+import { isFavorite, toggleFavorite } from '../prefs.js';
 
 function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -93,11 +94,21 @@ export async function render(el, route, ctx) {
   el.querySelector('#body').innerHTML = `
     <div class="glass team-hero">
       ${logo(teamLogo, team.abbr || row?.abbr, 72)}
-      <div style="min-width:0"><h1>${esc(name)}</h1><div class="facts">${facts}</div></div>
+      <div style="min-width:0"><h1>${esc(name)}</h1><div class="facts">${facts}</div>
+        <button type="button" class="fav-btn" id="fav" aria-pressed="false"></button></div>
     </div>
     <section class="section"><div class="section-head"><h2>Schedule</h2></div>
       ${games.length ? `<div class="glass">${sched}</div>` : emptyState('No games found for this season yet')}
     </section>
     ${ranks}`;
+  const favBtn = el.querySelector('#fav');
+  const favTeam = { id, name: team.name || row?.name, display: name, short: team.short || row?.short, abbr: team.abbr || row?.abbr, logo: teamLogo };
+  const drawFav = () => {
+    const on = isFavorite(league, id);
+    favBtn.setAttribute('aria-pressed', String(on));
+    favBtn.textContent = on ? '★ My team' : '☆ Add to My Teams';
+  };
+  favBtn.addEventListener('click', () => { toggleFavorite(league, favTeam); drawFav(); });
+  drawFav();
   return () => { document.title = 'Football Scoreboard'; };
 }
