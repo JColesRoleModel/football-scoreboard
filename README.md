@@ -21,7 +21,6 @@ Live site: https://jcolesrolemodel.github.io/football-scoreboard/
   line to follow one team.
 - **Team pages**: tap any team for its schedule and results, record, standing and AP
   rank history.
-
 - **My Teams**: star any team (on its page or by searching on the My Teams tab). Your
   teams are saved on your device, their games show first on the scoreboard, and their
   conferences and divisions come first in scores and standings.
