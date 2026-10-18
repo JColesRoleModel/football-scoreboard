@@ -1,0 +1,45 @@
+name: Update data
+
+on:
+  schedule:
+    # In season (Aug-Feb): every 10 minutes, Thursday through Monday (UTC).
+    - cron: '*/10 * * 1,2,8-12 0,1,4,5,6'
+    # In season, Tuesday and Wednesday: once a day for standings and poll updates.
+    - cron: '15 12 * 1,2,8-12 2,3'
+    # Off season (Mar-Jul): once a day.
+    - cron: '15 12 * 3-7 *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch ESPN data
+        run: node scripts/update-data.mjs
+
+      - name: Commit changes
+        run: |
+          git add data
+          if git diff --cached --quiet; then
+            echo "No data changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update data $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git pull --rebase origin main
+          git push
