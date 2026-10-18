@@ -144,6 +144,6 @@ export async function getTeamSchedule(league, id) {
     const games = weeks.filter(Boolean).flatMap((w) => w.games).filter((g) => g.home.id === id || g.away.id === id);
     const g0 = games[0];
     const team = g0 ? (g0.home.id === id ? g0.home : g0.away) : { id };
-    return { data: { team: { ...team, record: '', standing: '' }, games }, source: 'archive', updated: info.updated, fallback: true };
+    return { data: { team: { ...team, record: '', standing: '' }, games }, source: 'archive', updated: index.updated, fallback: true };
   }
 }
